@@ -1,12 +1,11 @@
 import streamlit as st
 import json
 import os
-
-from agents.ingestion_agent import load_data
-from agents.contradiction_agent import detect_conflict
-from agents.planning_agent import generate_plan
-from agents.execution_agent import execute_actions
-from agents.recovery_agent import recover
+from ingestion_agent import load_data
+from contradiction_agent import detect_conflict
+from planning_agent import generate_plan
+from execution_agent import execute_actions
+from recovery_agent import recover
 
 # ✅ FIX: ensure logs folder exists
 os.makedirs("logs", exist_ok=True)
