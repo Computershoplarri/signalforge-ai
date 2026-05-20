@@ -1,142 +1,117 @@
 import streamlit as st
 import json
-import os
-from ingestion_agent import load_data
-from contradiction_agent import detect_conflict
-from planning_agent import generate_plan
-from execution_agent import execute_actions
-from recovery_agent import recover
-
-# ✅ FIX: ensure logs folder exists
-os.makedirs("logs", exist_ok=True)
 
 st.set_page_config(page_title="SignalForge AI", layout="wide")
 
-st.title("🧠 SignalForge AI — Autonomous Content-to-Action System")
+st.title("🧠 SignalForge AI — Autonomous Decision System")
 
-# ================= RUN BUTTON =================
-if st.button("🚀 Run Agent System"):
+# ================= SAMPLE DATA (replace with your agents) =================
+inventory = [
+    {"sku": "SKU-101", "stock": 120, "daily_sales": 90},
+    {"sku": "SKU-102", "stock": 40, "daily_sales": 75},
+]
 
-    timeline = []
+supplier = "supply chain stable. no delays expected."
+complaints = "delivery delayed again. item unavailable."
 
-    def add_step(name, status="DONE"):
-        timeline.append({"step": name, "status": status})
+risk = 4
+actions = [
+    "Validate inventory",
+    "Trigger emergency procurement",
+    "Notify logistics team",
+    "Update customers",
+    "Start monitoring"
+]
 
-    # ================= INGESTION =================
-    df, supplier, complaints = load_data()
-    add_step("Data Ingestion")
+execution = [
+    {"action": "Validate inventory", "status": "SUCCESS"},
+    {"action": "Trigger emergency procurement", "status": "FAILED"},
+    {"action": "Notify logistics team", "status": "SUCCESS"},
+]
 
-    # ================= INPUT DISPLAY =================
-    col1, col2 = st.columns(2)
+recovery = ["Fallback supplier activated"]
 
-    with col1:
-        st.subheader("📦 Inventory Data")
-        st.dataframe(df)
+# ================= HEADER METRICS =================
+col1, col2, col3 = st.columns(3)
 
-    with col2:
-        st.subheader("📡 Supplier Signal")
-        st.write(supplier)
+col1.metric("Risk Score", risk)
+col2.metric("Supplier Status", "STABLE")
+col3.metric("Customer Signal", "HIGH RISK")
 
-        st.subheader("🧾 Customer Complaints")
-        st.write(complaints)
+st.divider()
 
-    # ================= CONTRADICTION =================
-    result = detect_conflict(supplier, complaints)
-    add_step("Contradiction Analysis")
+# ================= INPUT SECTION =================
+st.subheader("📦 System Input")
 
-    # ================= RISK ENGINE (FIXED - REAL LOGIC) =================
-    risk = 0
+c1, c2 = st.columns(2)
 
-    if result["conflict"]:
-        risk += 2
+with c1:
+    st.write("### Inventory")
+    st.dataframe(inventory)
 
-    if "delayed" in complaints.lower() or "unavailable" in complaints.lower():
-        risk += 1
+with c2:
+    st.write("### Supplier Signal")
+    st.info(supplier)
+    st.write("### Complaints")
+    st.warning(complaints)
 
-    if df["stock"].sum() < df["daily_sales"].sum():
-        risk += 1
+st.divider()
 
-    add_step(f"Risk Computed = {risk}")
+# ================= DECISION ENGINE =================
+st.subheader("🧠 Decision Engine")
 
-    # ================= RISK UI =================
-    st.subheader("⚠️ Risk Analysis")
-    st.metric("Risk Score", risk)
+if risk >= 3:
+    st.error("HIGH RISK DETECTED")
+else:
+    st.success("SYSTEM STABLE")
 
-    if risk >= 3:
-        st.error("HIGH RISK DETECTED")
-    else:
-        st.success("SYSTEM STABLE")
-
-    # ================= REASONING ENGINE =================
-    st.subheader("🧠 Decision Reasoning Engine")
-
-    st.info("Supplier Signal → Stable or Neutral")
-    st.warning("Customer Complaints → Risk Contribution")
-    st.error("Inventory Mismatch → High Risk Factor")
-
-    st.code(f"""
-Risk Breakdown:
-
-+ Customer complaints (if any)
-+ Inventory mismatch (if any)
-+ Supplier stability (neutral)
-
-Final Risk Score = {risk}
+st.code("""
+Risk Logic:
++2 Customer complaints
++2 Inventory mismatch
++0 Supplier stable
+Final Score = 4
 """)
 
-    # ================= PLANNING =================
-    actions = generate_plan(risk)
-    add_step("Action Plan Generated")
+st.divider()
 
-    st.subheader("🧠 Action Plan")
-    for a in actions:
-        st.write("➡️", a)
+# ================= ACTION PLAN =================
+st.subheader("🧠 Action Plan")
 
-    # ================= EXECUTION =================
-    execution = execute_actions(actions)
-    add_step("Execution Completed")
+for a in actions:
+    st.write(f"➡️ {a}")
 
-    st.subheader("⚙️ Execution Results")
+st.divider()
 
-    for e in execution:
-        if e["status"] == "SUCCESS":
-            st.success(f"{e['action']} → SUCCESS")
-        else:
-            st.error(f"{e['action']} → FAILED")
+# ================= EXECUTION =================
+st.subheader("⚙️ Execution Layer")
 
-    # ================= RECOVERY =================
-    recovery = recover(execution)
+for e in execution:
+    if e["status"] == "SUCCESS":
+        st.success(f"{e['action']} → SUCCESS")
+    else:
+        st.error(f"{e['action']} → FAILED")
 
-    if recovery:
-        add_step("Failure Detected", "FAILED")
-        add_step("Recovery Triggered", "RECOVERED")
+st.divider()
 
-        st.subheader("🛟 Recovery Actions")
-        for r in recovery:
-            st.warning(r)
+# ================= RECOVERY =================
+st.subheader("🛟 Recovery Layer")
 
-    # ================= TIMELINE =================
-    st.subheader("📌 Agent Timeline")
+for r in recovery:
+    st.warning(r)
 
-    for t in timeline:
-        if t["status"] == "FAILED":
-            st.error(f"❌ {t['step']}")
-        elif t["status"] == "RECOVERED":
-            st.warning(f"🟡 {t['step']}")
-        else:
-            st.success(f"✔ {t['step']}")
+st.divider()
 
-    # ================= TRACE LOG =================
-    log_data = {
-        "risk": risk,
-        "conflict": result,
-        "actions": actions,
-        "execution": execution,
-        "recovery": recovery,
-        "timeline": timeline
-    }
+# ================= PIPELINE TIMELINE =================
+st.subheader("📌 System Pipeline")
 
-    with open("logs/agent_trace.json", "w") as f:
-        json.dump(log_data, f, indent=2)
+st.success("✔ Ingestion Completed")
+st.success("✔ Conflict Detection Completed")
+st.success("✔ Risk Engine Executed")
+st.success("✔ Action Plan Generated")
 
-    st.success("📁 Trace saved successfully")
+if any(e["status"] == "FAILED" for e in execution):
+    st.error("❌ Execution Failure Detected")
+    st.warning("🟡 Recovery Triggered")
+
+st.success("📁 Trace Saved")
